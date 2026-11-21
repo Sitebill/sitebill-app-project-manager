@@ -1,0 +1,14 @@
+{
+    "name": "rumantic/sitebill-app-project-manager",
+    "description": "Project manager (a mini Jira) for Sitebill: projects, member roles, issues, board, backlog and sprints, comments, history.",
+    "type": "project",
+    "license": "MIT",
+    "homepage": "https://sitebillcms.com/",
+    "keywords": ["sitebill", "project-management", "issue-tracker", "kanban", "scrum", "jira", "tasks", "app"],
+    "require": { "php": ">=8.4" },
+    "require-dev": { "sitebill/app-sdk": "dev-main" },
+    "repositories": [ { "type": "vcs", "url": "https://github.com/Sitebill/sitebill-app-sdk" } ],
+    "autoload": { "psr-4": { "SitebillApps\\Rumantic\\ProjectManager\\": "api/src/" } },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

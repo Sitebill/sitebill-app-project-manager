@@ -1,0 +1,42 @@
+{
+  "id": "rumantic.project-manager",
+  "name": { "ru": "Менеджер проектов", "en": "Project Manager", "sr": "Menadžer projekata", "tg": "Идораи лоиҳаҳо" },
+  "version": "0.1.0",
+  "vendor": { "name": "Rumantic", "url": "https://sitebillcms.com/" },
+  "license": "MIT",
+  "repository": "https://github.com/Sitebill/sitebill-app-project-manager",
+  "description": {
+    "ru": "Мини-Jira для команды: проекты, роли участников, задачи, доска, бэклог и спринты, комментарии, история изменений и уведомления.",
+    "en": "A mini Jira for your team: projects, member roles, issues, board, backlog and sprints, comments, change history and notifications.",
+    "sr": "Mini Jira za vaš tim: projekti, uloge članova, zadaci, tabla, bekšlog i sprintovi, komentari, istorija izmena i obaveštenja.",
+    "tg": "Mini-Jira барои jamoa: лоиҳаҳо, нақшҳои иштирокчиён, вазифаҳо, тахта, бэклог ва спринтҳо, шарҳҳо, таърихи тағйирот ва огоҳиҳо."
+  },
+  "sdk": { "php": "1", "web": "1" },
+  "requires": { "host": ">=1.3" },
+  "provider": "SitebillApps\\Rumantic\\ProjectManager\\ProjectManagerServiceProvider",
+  "permissions": [],
+  "profiles": ["blank"],
+  "shell": {
+    "mode": "owner",
+    "home": "TrackerHome",
+    "adminDashboard": "TrackerDashboard",
+    "adminMenu": "replace",
+    "accountMenu": "replace",
+    "publicNav": []
+  },
+  "admin": {
+    "menu": [
+      { "label": { "ru": "Проекты и задачи", "en": "Projects and issues", "sr": "Projekti i zadaci", "tg": "Лоиҳаҳо ва вазифаҳо" }, "icon": "i-lucide-kanban-square", "path": "" },
+      { "label": { "ru": "Настройки", "en": "Settings", "sr": "Podešavanja", "tg": "Танзимот" }, "icon": "i-lucide-settings", "path": "settings" }
+    ],
+    "pages": ["", "settings"],
+    "widgets": { "admin.dashboard": "TrackerDashboard" }
+  },
+  "account": {
+    "menu": [
+      { "label": { "ru": "Проекты и задачи", "en": "Projects and issues", "sr": "Projekti i zadaci", "tg": "Лоиҳаҳо ва вазифаҳо" }, "icon": "i-lucide-kanban-square", "path": "" }
+    ],
+    "pages": [""]
+  },
+  "web": { "admin": "web/app.mjs", "site": "web/app.mjs" }
+}

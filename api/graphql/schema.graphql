@@ -1,0 +1,316 @@
+type TrackerMe {
+    id: Int!
+    name: String!
+    "Администратор сайта: менеджер всех проектов"
+    is_admin: Boolean!
+    can_create_project: Boolean!
+    "Менеджер проекта или админ: может искать людей на сайте, чтобы добавить в проект"
+    can_search_users: Boolean!
+}
+
+type TrackerUser {
+    id: Int!
+    name: String!
+    email: String!
+}
+
+type TrackerMember {
+    user_id: Int!
+    name: String!
+    "manager | member | viewer"
+    role: String!
+}
+
+type TrackerStatus {
+    id: ID!
+    name: String!
+    "todo | doing | done"
+    category: String!
+    position: Int!
+    issue_count: Int!
+}
+
+type TrackerSprint {
+    id: ID!
+    name: String!
+    goal: String
+    "planned | active | closed"
+    state: String!
+    starts_at: String
+    ends_at: String
+    issue_count: Int!
+    done_count: Int!
+    points_total: Int!
+    points_done: Int!
+}
+
+type TrackerProject {
+    id: ID!
+    key: String!
+    name: String!
+    description: String
+    is_archived: Boolean!
+    "Моя роль: manager | member | viewer"
+    my_role: String
+    open_issues: Int!
+    members: [TrackerMember!]!
+    statuses: [TrackerStatus!]!
+    sprints: [TrackerSprint!]!
+}
+
+type TrackerComment {
+    id: ID!
+    user_id: Int!
+    user_name: String!
+    body: String!
+    created_at: String!
+    can_delete: Boolean!
+}
+
+type TrackerActivity {
+    id: ID!
+    user_name: String!
+    "created | status | assignee_id | priority | title | ... | comment"
+    field: String!
+    from_value: String
+    to_value: String
+    created_at: String!
+}
+
+type TrackerFeedItem {
+    id: ID!
+    user_name: String!
+    field: String!
+    from_value: String
+    to_value: String
+    created_at: String!
+    issue_key: String!
+    issue_title: String!
+}
+
+type TrackerIssue {
+    id: ID!
+    key: String!
+    number: Int!
+    project_id: ID!
+    project_key: String!
+    project_name: String!
+    parent_id: Int
+    parent_key: String
+    parent_title: String
+    "task | bug | story | improvement"
+    type: String!
+    title: String!
+    description: String
+    status_id: Int!
+    status_name: String!
+    status_category: String!
+    "lowest | low | medium | high | highest"
+    priority: String!
+    assignee_id: Int
+    assignee_name: String
+    reporter_id: Int
+    reporter_name: String
+    sprint_id: Int
+    sprint_name: String
+    estimate: Int
+    due_date: String
+    labels: [String!]!
+    position: Int!
+    created_at: String!
+    updated_at: String!
+    resolved_at: String
+    subtasks_total: Int!
+    subtasks_done: Int!
+    comments_count: Int!
+    "Только в trackerIssue"
+    comments: [TrackerComment!]
+    activity: [TrackerActivity!]
+    subtasks: [TrackerIssue!]
+}
+
+type TrackerSettings {
+    members_can_create_projects: Boolean!
+    notify: Boolean!
+}
+
+input TrackerProjectInput {
+    key: String! @rules(apply: ["required", "regex:/^[A-Za-z][A-Za-z0-9]{1,7}$/"])
+    name: String! @rules(apply: ["required", "max:120"])
+    description: String @rules(apply: ["nullable", "max:5000"])
+}
+
+input TrackerProjectUpdateInput {
+    name: String @rules(apply: ["nullable", "max:120"])
+    description: String @rules(apply: ["nullable", "max:5000"])
+    is_archived: Boolean
+}
+
+input TrackerSprintInput {
+    name: String! @rules(apply: ["required", "max:100"])
+    goal: String @rules(apply: ["nullable", "max:300"])
+    starts_at: String @rules(apply: ["nullable", "date_format:Y-m-d"])
+    ends_at: String @rules(apply: ["nullable", "date_format:Y-m-d"])
+}
+
+input TrackerIssueCreateInput {
+    title: String! @rules(apply: ["required", "max:250"])
+    description: String @rules(apply: ["nullable", "max:20000"])
+    type: String @rules(apply: ["nullable", "in:task,bug,story,improvement"])
+    priority: String @rules(apply: ["nullable", "in:lowest,low,medium,high,highest"])
+    status_id: Int
+    assignee_id: Int
+    sprint_id: Int
+    parent_id: Int
+    estimate: Int @rules(apply: ["nullable", "integer", "min:0", "max:1000"])
+    due_date: String @rules(apply: ["nullable", "date_format:Y-m-d"])
+    labels: [String!]
+}
+
+"Передавайте только меняемые поля; null очищает необязательное поле."
+input TrackerIssueUpdateInput {
+    title: String @rules(apply: ["nullable", "max:250"])
+    description: String @rules(apply: ["nullable", "max:20000"])
+    type: String @rules(apply: ["nullable", "in:task,bug,story,improvement"])
+    priority: String @rules(apply: ["nullable", "in:lowest,low,medium,high,highest"])
+    assignee_id: Int
+    sprint_id: Int
+    parent_id: Int
+    estimate: Int @rules(apply: ["nullable", "integer", "min:0", "max:1000"])
+    due_date: String @rules(apply: ["nullable", "date_format:Y-m-d"])
+    labels: [String!]
+}
+
+input TrackerSettingsInput {
+    members_can_create_projects: Boolean
+    notify: Boolean
+}
+
+extend type Query {
+    trackerMe: TrackerMe!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@me")
+
+    trackerProjects: [TrackerProject!]!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@projectsList")
+
+    trackerProject(key: String!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@project")
+
+    trackerIssues(
+        project_id: ID!
+        sprint_id: ID
+        backlog: Boolean
+        assignee_id: Int
+        unassigned: Boolean
+        status_id: ID
+        type: String
+        priority: String
+        label: String
+        q: String
+        limit: Int = 500
+    ): [TrackerIssue!]!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@issuesList")
+
+    trackerIssue(key: String!): TrackerIssue!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@issue")
+
+    trackerMyIssues: [TrackerIssue!]!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@myIssues")
+
+    trackerUsers(q: String): [TrackerUser!]!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@users")
+
+    trackerActivity(project_id: ID!): [TrackerFeedItem!]!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@activityFeed")
+
+    trackerSettings: TrackerSettings!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@settings")
+}
+
+extend type Mutation {
+    trackerCreateProject(input: TrackerProjectInput!): TrackerProject!
+        @guard @can(ability: "pm.create-project", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@createProject")
+
+    trackerUpdateProject(id: ID!, input: TrackerProjectUpdateInput!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@updateProject")
+
+    trackerDeleteProject(id: ID!): Boolean!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@deleteProject")
+
+    trackerSetMember(project_id: ID!, user_id: Int!, role: String! @rules(apply: ["in:manager,member,viewer"])): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@setMember")
+
+    trackerRemoveMember(project_id: ID!, user_id: Int!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@removeMember")
+
+    trackerSaveStatus(project_id: ID!, id: ID, name: String! @rules(apply: ["required", "max:60"]), category: String! @rules(apply: ["in:todo,doing,done"])): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@saveStatus")
+
+    trackerDeleteStatus(project_id: ID!, id: ID!, move_to: ID): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@deleteStatus")
+
+    trackerReorderStatuses(project_id: ID!, ids: [ID!]!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@reorderStatuses")
+
+    trackerSaveSprint(project_id: ID!, id: ID, input: TrackerSprintInput!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@saveSprint")
+
+    trackerStartSprint(project_id: ID!, id: ID!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@startSprint")
+
+    trackerCloseSprint(project_id: ID!, id: ID!, move_to: ID): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@closeSprint")
+
+    trackerDeleteSprint(project_id: ID!, id: ID!): TrackerProject!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@deleteSprint")
+
+    trackerCreateIssue(project_id: ID!, input: TrackerIssueCreateInput!): TrackerIssue!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@createIssue")
+
+    trackerUpdateIssue(id: ID!, input: TrackerIssueUpdateInput!): TrackerIssue!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@updateIssue")
+
+    "index — позиция в колонке (0 — сверху); без index — в конец."
+    trackerMoveIssue(id: ID!, status_id: ID!, index: Int): TrackerIssue!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@moveIssue")
+
+    trackerDeleteIssue(id: ID!): Boolean!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@deleteIssue")
+
+    trackerAddComment(issue_id: ID!, body: String! @rules(apply: ["required", "max:5000"])): TrackerComment!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@addComment")
+
+    trackerDeleteComment(id: ID!): Boolean!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@deleteComment")
+
+    trackerSaveSettings(input: TrackerSettingsInput!): TrackerSettings!
+        @guard @can(ability: "pm.use", model: "Tenant")
+        @field(resolver: "SitebillApps\\Rumantic\\ProjectManager\\GraphQL\\TrackerResolver@saveSettings")
+}
