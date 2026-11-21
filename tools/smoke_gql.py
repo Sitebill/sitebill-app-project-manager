@@ -2,7 +2,7 @@
 #   python tools/smoke_gql.py http://localhost:8001 admin@example.com TestPass123
 # Создаёт пользователей pmtest_*@example.com (регистрация), проект SMK<random> и проверяет роли, спринты, статусы, комментарии.
 # Каждая проверка печатает OK/FAIL; код возврата 1, если что-то упало.
-import json, sys, random, string, urllib.request, urllib.error, http.cookiejar
+import json, os, sys, random, string, urllib.parse
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8001'
 ADMIN = (sys.argv[2] if len(sys.argv) > 2 else 'admin@example.com', sys.argv[3] if len(sys.argv) > 3 else 'TestPass123')
@@ -11,25 +11,34 @@ failed = 0
 
 
 class Client:
+    """Сессия через curl: за Node-прокси сайта (Docker) urllib получает пустой 400, curl — нормальный ответ."""
     def __init__(self):
-        self.jar = http.cookiejar.CookieJar()
-        self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
+        import tempfile
+        self.jarfile = tempfile.mktemp(suffix='.jar')
 
     def _xsrf(self):
-        for c in self.jar:
-            if c.name == 'XSRF-TOKEN':
-                return urllib.parse.unquote(c.value)
+        try:
+            for line in open(self.jarfile, encoding='utf-8'):
+                parts = line.strip().replace('#HttpOnly_', '').split('\t')
+                if len(parts) >= 7 and parts[5] == 'XSRF-TOKEN':
+                    return urllib.parse.unquote(parts[6])
+        except FileNotFoundError:
+            pass
         return ''
+
+    def _curl(self, *args):
+        import subprocess
+        return subprocess.run(['curl', '-s', '-b', self.jarfile, '-c', self.jarfile, *args], capture_output=True).stdout.decode('utf-8', 'replace')
 
     def post(self, path, body):
         if not self._xsrf():
-            self.op.open(urllib.request.Request(BASE + '/sanctum/csrf-cookie')).read()
-        req = urllib.request.Request(BASE + path, data=json.dumps(body).encode(), method='POST', headers={
-            'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': self._xsrf(), 'Origin': BASE, 'Referer': BASE + '/'})
-        try:
-            return json.loads(self.op.open(req).read() or b'{}')
-        except urllib.error.HTTPError as e:
-            return {'http': e.code, 'body': e.read().decode()[:300]}
+            self._curl(BASE + '/sanctum/csrf-cookie', '-o', os.devnull)
+        out = self._curl('-w', '\n%{http_code}', '-H', 'Content-Type: application/json', '-H', 'Accept: application/json', '-H', 'X-XSRF-TOKEN: ' + self._xsrf(),
+                         '-H', 'Origin: ' + BASE, '-H', 'Referer: ' + BASE + '/', '--data-binary', json.dumps(body), BASE + path)
+        text, _, code = out.rpartition('\n')
+        if not code.startswith('2'):
+            return {'http': int(code or 0), 'body': text[:300]}
+        return json.loads(text or '{}')
 
     def gql(self, query, **variables):
         return self.post('/graphql', {'query': query, 'variables': variables})
