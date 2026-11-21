@@ -1,7 +1,7 @@
 {
   "id": "rumantic.project-manager",
   "name": { "ru": "Менеджер проектов", "en": "Project Manager", "sr": "Menadžer projekata", "tg": "Идораи лоиҳаҳо" },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": { "name": "Rumantic", "url": "https://sitebillcms.com/" },
   "license": "MIT",
   "repository": "https://github.com/Sitebill/sitebill-app-project-manager",
@@ -16,6 +16,7 @@
   "provider": "SitebillApps\\Rumantic\\ProjectManager\\ProjectManagerServiceProvider",
   "permissions": [],
   "profiles": ["blank"],
+  "demo": { "command": "rumantic-project-manager:seed-demo" },
   "shell": {
     "mode": "owner",
     "home": "TrackerHome",
