@@ -3,8 +3,17 @@
 Мини-Jira как устанавливаемое приложение Sitebill Community: проекты, роли участников, задачи с подзадачами, доска
 с drag&drop, бэклог со спринтами, комментарии, история изменений и уведомления о назначении и комментариях.
 
-> EN: A mini Jira for Sitebill Community: projects, member roles, issues with subtasks, a drag-and-drop board,
-> backlog with sprints, comments, change history and notifications. MIT license.
+**Self-hosted альтернатива Jira и Trello**: открытый (MIT) трекер задач и канбан-доска для небольших команд — на вашем сервере, без подписки и лимитов на пользователей.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) ![Sitebill Community app](https://img.shields.io/badge/Sitebill-Community%20app-blue) ![Host API](https://img.shields.io/badge/Host%20API-%E2%89%A51.3-lightgrey)
+
+> **EN:** An open-source, self-hosted Jira / Trello alternative: a project management and issue tracker app for
+> [Sitebill Community](https://sitebillcms.com/) with Kanban board (drag & drop), backlog and sprints, subtasks,
+> per-project roles (manager / member / viewer), comments, change history and notifications. Laravel + GraphQL backend,
+> Vue/Nuxt UI, 4 languages (ru, en, sr, tg). MIT license.
+
+Подходит, если нужны: трекер задач для команды или агентства, канбан-доска и бэклог со спринтами (Scrum), учёт задач
+по проектам с ролями, своя «мини-Jira» на собственном хостинге.
 
 ## Установка
 
@@ -15,7 +24,7 @@ curl -fsSL https://sitebillcms.com/install.sh | sh -s -- --profile blank --apps 
 ```
 
 `--demo` создаёт проект «Website launch» с двумя спринтами и 13 задачами. Вручную:
-`php artisan apps install rumantic.project-manager-0.1.0.sbapp --shell`. Нужен Host API 1.3 (Community не старше релиза с `Users::search` и `Notifier::notifyUsers`).
+`php artisan apps install rumantic.project-manager-<версия>.sbapp --shell` (или `php artisan apps install rumantic.project-manager` из каталога). Нужен Host API 1.3 (Community не старше релиза с `Users::search` и `Notifier::notifyUsers`).
 
 ## Что умеет
 
